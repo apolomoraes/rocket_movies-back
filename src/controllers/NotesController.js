@@ -6,7 +6,7 @@ class NotesController {
     const { user_id } = request.params;
 
     // pega as notas no banco de dados e insere
-    const note_id = await knex("movie_notes").insert({
+    const [note_id] = await knex("movie_notes").insert({
       title,
       description,
       rating,
@@ -24,7 +24,7 @@ class NotesController {
     // pega as tags no banco de dados e insere
     await knex("movie_tags").insert(tagsInsert);
 
-    response.json();
+    return response.json();
   }
 
   async show(request, response) {
@@ -41,7 +41,7 @@ class NotesController {
     });
   }
 
-  async delete(request, response){
+  async delete(request, response) {
     const { id } = request.params;
 
     // busca o movie_notes no banco de dados e apaga as notas do id inserido pelo usuário
@@ -50,31 +50,31 @@ class NotesController {
     return response.json()
   }
 
-  async index(request, response){
+  async index(request, response) {
     const { title, user_id, tags } = request.query;
 
     let notes;
 
-    if(tags){
+    if (tags) {
       const filterTags = tags.split(',').map(tag => tag.trim());
 
       notes = await knex("movie_tags")
-      .select([
-        "movie_notes.id",
-        "movie_notes.title",
-        "movie_notes.user_id",
-      ])
-      .where("movie_notes.user_id", user_id)
-      .whereLike("movie_notes.title", `%${title}%`)
-      .whereIn("name", filterTags)
-      .innerJoin("movie_notes", "movie_notes.id", "movie_tags.note_id")
-      .orderBy("movie_notes.title")
+        .select([
+          "movie_notes.id",
+          "movie_notes.title",
+          "movie_notes.user_id",
+        ])
+        .where("movie_notes.user_id", user_id)
+        .whereLike("movie_notes.title", `%${title}%`)
+        .whereIn("name", filterTags)
+        .innerJoin("movie_notes", "movie_notes.id", "movie_tags.note_id")
+        .orderBy("movie_notes.title")
 
-    }else {
-    notes = await knex("movie_notes")
-    .where({ user_id })
-    .whereLike("title", `%${title}%`) // whereLike busca valores dentro de uma palavra, o percentual diz pro banco de dados verificar tanto antes quando depois, em qualquer parte da palavra se existir oque foi pesquisado vai ser exibido
-    .orderBy("title");
+    } else {
+      notes = await knex("movie_notes")
+        .where({ user_id })
+        .whereLike("title", `%${title}%`) // whereLike busca valores dentro de uma palavra, o percentual diz pro banco de dados verificar tanto antes quando depois, em qualquer parte da palavra se existir oque foi pesquisado vai ser exibido
+        .orderBy("title");
     }
 
     const userTags = await knex("movie_tags").where({ user_id });
