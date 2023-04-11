@@ -1,29 +1,17 @@
 const { hash, compare } = require("bcryptjs");
 const AppError = require("../utils/AppError");
-
 const sqliteConnection = require("../database/sqlite");
+const UserRepository = require("../repositories/UserRepository");
+const UserCreateService = require("../services/UserCreateService");
 
 class UsersController {
   //criação do user
   async create(request, response) {
     const { name, email, password } = request.body;
 
-    const database = await sqliteConnection();
-    const checkUserExists = await database.get("SELECT * FROM users WHERE email = (?)", [email])
-    //checkUserExists verifica se o e-amil está sendo utulizado por alguém
-
-    // este if verifica se o email é existente
-    if (checkUserExists) {
-      throw new AppError("Este e-mail já está em uso.");
-    }
-
-    const hashedPassword = await hash(password, 8);
-    // nesta linha usamos a função do bcrypt, a hash, você passa a senha e a complexidade em que essa senha vai ser criptografada
-
-    await database.run(
-      "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-      [name, email, hashedPassword]); // podemos ver que nesta linha passamos a variável com a senha já criptografada
-    //está linha fala onde os dados acima deve ser inserido, assim cadastrando o usuário, OBS: o id é gerado automaticamente
+    const userRepository = new UserRepository();
+    const userCreateService = new UserCreateService(userRepository);
+    await userCreateService.execute({ name, email, password });
 
     //está linha retorna um 201 falando que o usuário foi criado com sucesso
     return response.status(201).json();
